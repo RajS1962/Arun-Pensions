@@ -1,113 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Arun Pensions Dashboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #fafafa; }
-        .container { max-width: 450px; margin: auto; padding: 16px; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.05); border-radius: 12px; }
-        h2 { text-align: center; margin-bottom: 8px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        th, td { text-align: center; padding: 5px; border: 1px solid #eee; }
-        input[type='number'] { width: 70px; padding: 2px; text-align: right; }
-        .chart { margin-top: 20px; background: #fff; }
-        @media (max-width:600px) {
-            .container { max-width: 100vw; padding: 3px; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pension Dashboard - Styled UI</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background: #232239;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 480px;
+      margin: 40px auto;
+      padding: 18px;
+      background: #181828;
+      border-radius: 20px;
+      box-shadow: 0 6px 32px 0 rgba(0,0,0,0.60);
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    h2 {
+      font-size: 1.35rem;
+      margin-bottom: 8px;
+      color: #b6b6ee;
+    }
+    .options-row {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0;
+      font-size: 1.05rem;
+    }
+    .options-row label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .summary-labels {
+      display: flex;
+      justify-content: space-between;
+      margin: 22px 0 6px 0;
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: #fff;
+    }
+    .donut-legend {
+      margin: 18px 0 6px 0;
+    }
+    .donut-legend-item {
+      display: flex;
+      align-items: center;
+      font-size: 1.13rem;
+      margin-bottom: 8px;
+    }
+    .legend-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 36px;
+      display: inline-block;
+      margin-right: 11px;
+    }
+    .legend-dot.stocks { background: #673ab7; }
+    .legend-dot.commodities { background: #00bcd4; }
+    .legend-dot.cash { background: #82b1ff; }
+    .legend-dot.other { background: #e040fb; }
+
+    /* Large chart value labels */
+    .chart-label {
+      font-size: 1.57rem;
+      font-weight: bold;
+      color: #fff;
+      margin-top: 8px;
+      display: block;
+      text-align: center;
+    }
+    /* Buttons/tabs */
+    .tab-btn, .btn {
+      font-size: 1.11rem;
+      background: #262648;
+      color: #fff;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 10px;
+      margin: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .tab-btn.active, .btn.active, .tab-btn:hover, .btn:hover {
+      background: #44446c;
+      color: #fff;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <h2>Arun Pensions Dashboard</h2>
-    <form id="pensionForm">
-        <table id="pensionTable">
-        </table>
-        <button type="submit">Save & Update Charts</button>
-    </form>
-    <div class="chart">
-        <canvas id="lineChartAll" width="400" height="200"></canvas>
-        <canvas id="lineChartTotal" width="400" height="200"></canvas>
+  <div class="container">
+    <h1><i class="fas fa-chart-pie"></i> Pension Portfolio</h1>
+    <h2>Current Asset Allocation</h2>
+    <div class="options-row">
+      <label><input type="checkbox" checked disabled /> Reveal funds</label>
+      <label><input type="checkbox" disabled /> Buy in</label>
+      <label><input type="checkbox" /> Show holdings</label>
     </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// Initial data - you can edit this
-const pensions = {
-    "Nest": [1000,1400,1500,1600,1800,2000,2100,2300,2500,2800,3000],
-    "Royal London": [0,0,1200,2600,3300,4500,5000,5500,6000,6600,7800],
-    "Baringa": [0,0,0,0,0,0,2500,6000,10000,15000,20000]
-};
-const years = [2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030];
-
-function updateTable() {
-    const table = document.getElementById('pensionTable');
-    let html = '<tr><th>Year</th>';
-    for (let name in pensions) html += `<th>${name}</th>`;
-    html += '</tr>';
-    for (let i=0; i<years.length; i++) {
-        html += '<tr><td>'+years[i]+'</td>';
-        for (let name in pensions) {
-            html += `<td><input type="number" value="${pensions[name][i]}" min="0" data-pension="${name}" data-idx="${i}" /></td>`;
+    <div>
+      <canvas id="donutChart" width="350" height="350"></canvas>
+      <span class="chart-label" id="main-label">77.7% Stocks</span>
+    </div>
+    <div class="donut-legend">
+      <div class="donut-legend-item">
+        <span class="legend-dot stocks"></span> Stocks <span style="margin-left:auto;">77.7%</span>
+      </div>
+      <div class="donut-legend-item">
+        <span class="legend-dot commodities"></span> Commodities <span style="margin-left:auto;">11.0%</span>
+      </div>
+      <div class="donut-legend-item">
+        <span class="legend-dot cash"></span> Cash <span style="margin-left:auto;">9.1%</span>
+      </div>
+      <div class="donut-legend-item">
+        <span class="legend-dot other"></span> Other <span style="margin-left:auto;">2.1%</span>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Donut chart config (Chart.js)
+    const donutData = {
+      labels: [
+        'Stocks',
+        'Commodities',
+        'Cash',
+        'Other'
+      ],
+      datasets: [{
+        data: [77.7, 11.0, 9.1, 2.1],
+        backgroundColor: [
+          '#673ab7',  // Stocks
+          '#00bcd4',  // Commodities
+          '#82b1ff',  // Cash
+          '#e040fb'   // Other
+        ],
+        borderWidth: 5,
+        borderColor: '#181828',
+        hoverOffset: 8
+      }]
+    };
+    const donutOptions = {
+      cutout: '75%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.label}: ${context.parsed}%`;
+            }
+          }
         }
-        html += '</tr>';
+      }
+    };
+
+    const chart = new Chart(document.getElementById('donutChart'), {
+      type: 'doughnut',
+      data: donutData,
+      options: donutOptions
+    });
+
+    // Set central label dynamically based on max value
+    function updateMainLabel() {
+      const values = donutData.datasets[0].data;
+      const labels = donutData.labels;
+      const maxIdx = values.indexOf(Math.max(...values));
+      document.getElementById('main-label').textContent = `${values[maxIdx]}% ${labels[maxIdx]}`;
     }
-    table.innerHTML = html;
-}
-
-function getFormData() {
-    const inputs = document.querySelectorAll('input[type=number]');
-    inputs.forEach(input => {
-        const name = input.getAttribute('data-pension');
-        const idx = parseInt(input.getAttribute('data-idx'));
-        pensions[name][idx] = Number(input.value);
-    });
-}
-
-function drawCharts() {
-    // All pension line chart
-    const ctxA = document.getElementById('lineChartAll').getContext('2d');
-    if (window.lineChartAll) window.lineChartAll.destroy();
-    window.lineChartAll = new Chart(ctxA, {
-        type:'line',
-        data: {
-            labels: years,
-            datasets: Object.keys(pensions).map((name, i) => ({
-                label: name,
-                data: pensions[name],
-                borderColor: ['#1976d2','#43a047','#e53935'][i],
-                fill:false
-            }))
-        },
-        options: {responsive:true, plugins:{legend:{display:true}}}
-    });
-    // Total (sum) line chart
-    const totals = years.map((_,i) => Object.values(pensions).reduce((acc,v) => acc+v[i],0));
-    const ctxT = document.getElementById('lineChartTotal').getContext('2d');
-    if (window.lineChartTotal) window.lineChartTotal.destroy();
-    window.lineChartTotal = new Chart(ctxT, {
-        type:'line',
-        data: {
-            labels: years,
-            datasets:[{
-                label:'Total',
-                data: totals,
-                borderColor:'#ff9800',
-                fill:false
-            }]
-        },
-        options: {responsive:true, plugins:{legend:{display:true}}}
-    });
-}
-
-// Setup and events
-updateTable();
-drawCharts();
-document.getElementById('pensionForm').onsubmit = function(e) {
-    e.preventDefault();
-    getFormData();
-    drawCharts();
-    updateTable();
-}
-</script>
+    updateMainLabel();
+  </script>
 </body>
 </html>
